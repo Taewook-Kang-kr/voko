@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="kr">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>VOKO 보이스코리아</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+
+  <body>
+    <nav class="container navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">VOKO</a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item active">
+              <a class="nav-link" href="index.html">#집에있자</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="voko_find.html">목소리닮은꼴 </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="voko_mimic.html">성대모사 </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="voko_ranking.html">랭킹 </a>
+            </li>
+          </ul>
+        </div>
+    </nav>
+
+    <header class="container jumbotron">
+        <div class="container">
+            <div class="row row-header">
+                <div class="col-12 col-sm-6 align-self-center">
+                    <h1>VOKO</h1>
+                    <h2>보이스코리아</h2> 
+                    <p>당신의 목소리와 비슷한 연예인을 찾아보세요!</p>
+                </div>
+                <div class="col-12 col-sm-3 align-self-center">
+                    <img src="img/logo.png">
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div>
+          <h2 style="text-align: center">범죄와의 전쟁 최민식</h2>
+         
+            <img class="center-img" src="img/box.png">
+            <div style="text-align: center">
+                <div id="label-container"></div>
+                <a class="btn btn-primary" onclick="init()">시작하기</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+
+      </div>
+      
+    </footer>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+   
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+
+<script type="text/javascript">
+    // more documentation available at
+    // https://github.com/tensorflow/tfjs-models/tree/master/speech-commands
+
+    // the link to your model provided by Teachable Machine export panel
+    const URL = "https://teachablemachine.withgoogle.com/models/vTFqAU8UA/";
+
+    async function createModel() {
+        const checkpointURL = URL + "model.json"; // model topology
+        const metadataURL = URL + "metadata.json"; // model metadata
+
+        const recognizer = speechCommands.create(
+            "BROWSER_FFT", // fourier transform type, not useful to change
+            undefined, // speech commands vocabulary feature, not useful for your models
+            checkpointURL,
+            metadataURL);
+
+        // check that model and metadata are loaded via HTTPS requests.
+        await recognizer.ensureModelLoaded();
+
+        return recognizer;
+    }
+
+    async function init() {
+        const recognizer = await createModel();
+        const classLabels = recognizer.wordLabels(); // get class labels
+        const labelContainer = document.getElementById("label-container");
+        var final = 0;
+        var tick = 0;
+        for (let i = 0; i < classLabels.length; i++) {
+            labelContainer.appendChild(document.createElement("div"));
+        }
+
+        // listen() takes two arguments:
+        // 1. A callback function that is invoked anytime a word is recognized.
+        // 2. A configuration object with adjustable fields
+        recognizer.listen(result => {
+            const scores = result.scores;
+            var classPrediction = 0;
+            tick++;
+            console.log(tick);
+            // probability of prediction for each class
+            // render the probability scores per class
+                //const classPrediction = classLabels[1] + ": " + (result.scores[1].toFixed(2) * 100);
+                classPrediction = (result.scores[1].toFixed(2) * 100);
+                final += classPrediction;
+                console.log(classPrediction);
+                labelContainer.childNodes[1].innerHTML = Math.round(final/tick) + "% 일치";
+        }, {
+            includeSpectrogram: true, // in case listen should return result.spectrogram
+            probabilityThreshold: 0.75,
+            invokeCallbackOnNoiseAndUnknown: true,
+            overlapFactor: 0.50 // probably want between 0.5 and 0.75. More info in README
+        });
+
+        // Stop the recognition in 5 seconds.
+        setTimeout(() => recognizer.stopListening(), 15000);
+    }
+</script>
+      
+    </script>
+  </body>
+</html>
